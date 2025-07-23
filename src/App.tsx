@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import BrowserViewer from './BrowserViewer'
 
-const StarterPrompt = ({ icon, title, description }: { icon: string, title: string, description: string }) => (
-  <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+const StarterPrompt = ({ icon, title, description, onClick }: { icon: string, title: string, description: string, onClick?: () => void }) => (
+  <div className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" onClick={onClick}>
     <div className="flex items-center justify-center w-10 h-10 mb-3 bg-white border border-gray-200 rounded-lg">
       <span className="text-lg">{icon}</span>
     </div>
@@ -12,39 +13,50 @@ const StarterPrompt = ({ icon, title, description }: { icon: string, title: stri
 
 function App() {
   const [query, setQuery] = useState('')
+  const [currentView, setCurrentView] = useState('home')
 
   const starterPrompts = [
     {
       icon: "🐙",
       title: "Get PRs for a repo",
-      description: "Go to the Stagehand repo by Browserbase and get me the latest PRs"
+      description: "Go to the Stagehand repo by Browserbase and get me the latest PRs",
+      action: () => {}
     },
     {
       icon: "📊",
       title: "Market odds on Polymarket",
-      description: "Retrieve current Polymarket odds for Elon Musk to unfollow Donald Trump on X"
+      description: "Retrieve current Polymarket odds for Elon Musk to unfollow Donald Trump on X",
+      action: () => {}
     },
     {
       icon: "Y",
       title: "Retrieve jobs from YC",
-      description: "Go to the Y Combinator jobs page and get me the current listings on the first page"
+      description: "Go to the Y Combinator jobs page and get me the current listings on the first page",
+      action: () => setCurrentView('browser')
     },
     {
       icon: "🛍️",
       title: "Order a Nintendo Switch",
-      description: ""
+      description: "",
+      action: () => {}
     },
     {
       icon: "📈",
       title: "Nasdaq earnings retrieval",
-      description: ""
+      description: "",
+      action: () => {}
     },
     {
       icon: "🌐",
       title: "Book Flights",
-      description: ""
+      description: "",
+      action: () => {}
     }
   ]
+
+  if (currentView === 'browser') {
+    return <BrowserViewer />
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,6 +109,7 @@ function App() {
                 icon={prompt.icon}
                 title={prompt.title}
                 description={prompt.description}
+                onClick={prompt.action}
               />
             ))}
           </div>
