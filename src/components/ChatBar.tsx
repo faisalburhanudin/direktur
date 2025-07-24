@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react'
+import { useState, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useJobAutomation } from '../services/useJobAutomation'
 
 interface Message {
   id: string
@@ -18,69 +19,14 @@ interface ChatBarRef {
 const ChatBar = forwardRef<ChatBarRef, ChatBarProps>(({ url }, ref) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasTriggeredAutomation, setHasTriggeredAutomation] = useState(false)
+  const [isChatLoading, setIsChatLoading] = useState(false)
 
-  const triggerJobsAutomation = useCallback(async () => {
-    if (hasTriggeredAutomation) return
-    
-    setHasTriggeredAutomation(true)
-    setIsLoading(true)
-    try {
-      const response = await fetch('http://localhost:3001/api/hackernews/scrape-jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({})
-      })
+  const { isLoading: isAutomationLoading, triggerJobsAutomation } = useJobAutomation({
+    url,
+    onMessagesUpdate: setMessages
+  })
 
-      const data = await response.json()
-      
-      if (data.success) {
-        const chatResponse = await fetch('http://localhost:3001/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: 'Analyze these HackerNews job listings',
-            url: url,
-            automationData: data.jobs
-          })
-        })
-
-        const chatData = await chatResponse.json()
-        
-        const initialMessage: Message = {
-          id: '1',
-          content: chatData.response || `Found ${data.jobs.length} jobs from HackerNews. Here's what I found...`,
-          isUser: false,
-          timestamp: new Date()
-        }
-
-        setMessages([initialMessage])
-      } else {
-        const errorMessage: Message = {
-          id: '1',
-          content: 'I had trouble getting the job listings. Let me know if you\'d like me to try again.',
-          isUser: false,
-          timestamp: new Date()
-        }
-        setMessages([errorMessage])
-      }
-    } catch (error) {
-      const errorMessage: Message = {
-        id: '1',
-        content: 'I encountered an error while fetching jobs. The automation service might not be ready.',
-        isUser: false,
-        timestamp: new Date()
-      }
-      setMessages([errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [hasTriggeredAutomation, url])
+  const isLoading = isChatLoading || isAutomationLoading
 
   useImperativeHandle(ref, () => ({
     triggerAutomation: triggerJobsAutomation
@@ -98,7 +44,7 @@ const ChatBar = forwardRef<ChatBarRef, ChatBarProps>(({ url }, ref) => {
 
     setMessages(prev => [...prev, userMessage])
     setInputValue('')
-    setIsLoading(true)
+    setIsChatLoading(true)
 
     try {
       const response = await fetch('http://localhost:3001/api/chat', {
@@ -132,7 +78,7 @@ const ChatBar = forwardRef<ChatBarRef, ChatBarProps>(({ url }, ref) => {
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
-      setIsLoading(false)
+      setIsChatLoading(false)
     }
   }
 
