@@ -10,6 +10,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.40.0-ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
     
@@ -21,7 +23,7 @@ jobs:
       run: npm ci
       
     - name: Install Patchright browsers
-      run: npx patchright install --with-deps
+      run: npx patchright install
       
     - name: Run integration tests
       run: npm test
