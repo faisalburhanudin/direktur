@@ -29,9 +29,9 @@ function App() {
       action: () => {}
     },
     {
-      icon: "Y",
-      title: "Retrieve jobs from YC",
-      description: "Go to the Y Combinator jobs page and get me the current listings on the first page",
+      icon: "💼",
+      title: "Retrieve jobs from HackerNews",
+      description: "Go to the HackerNews jobs page and get me the current job listings",
       action: () => setCurrentView('browser')
     },
     {

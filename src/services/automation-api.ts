@@ -258,3 +258,53 @@ export const clickAtCoordinate = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const scrapeHackerNewsJobs = async (req: Request, res: Response) => {
+    try {
+        const { pageId = 'default' } = req.body;
+        
+        // Navigate to HackerNews jobs page
+        const page = await browserManager.navigateTo('https://news.ycombinator.com/jobs', pageId);
+        
+        // Wait for page to load
+        await page.waitForTimeout(2000);
+        
+        // Simple scraping - get all job links
+        const jobs = await page.evaluate(() => {
+            const jobElements = document.querySelectorAll('tr.athing');
+            const jobData: any[] = [];
+            
+            jobElements.forEach((element, index) => {
+                const titleElement = element.querySelector('.titleline > a');
+                const title = titleElement?.textContent?.trim() || '';
+                const url = titleElement?.getAttribute('href') || '';
+                const rank = element.querySelector('.rank')?.textContent?.replace('.', '') || '';
+                
+                if (title) {
+                    jobData.push({
+                        rank: rank || (index + 1).toString(),
+                        title,
+                        url: url.startsWith('http') ? url : `https://news.ycombinator.com/${url}`,
+                        id: element.id || `job-${index}`
+                    });
+                }
+            });
+            
+            return jobData;
+        });
+        
+        res.json({
+            success: true,
+            message: `Scraped ${jobs.length} jobs from HackerNews`,
+            jobs,
+            pageId,
+            url: page.url()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to scrape HackerNews jobs',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};

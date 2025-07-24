@@ -12,7 +12,8 @@ import {
   startScreenshotStream,
   stopScreenshotStream,
   getScreenshotStreamStatus,
-  clickAtCoordinate
+  clickAtCoordinate,
+  scrapeHackerNewsJobs
 } from './src/services/automation-api.js';
 import ScreenshotWebSocketServer from './src/services/websocket-server.js';
 
@@ -86,6 +87,9 @@ app.get('/api/browser/status', getBrowserStatus);
 app.post('/api/screenshots/start', (req, res) => startScreenshotStream(req, res, wsServer));
 app.post('/api/screenshots/stop', stopScreenshotStream);
 app.get('/api/screenshots/status', getScreenshotStreamStatus);
+
+// HackerNews scraping endpoint
+app.post('/api/hackernews/scrape-jobs', scrapeHackerNewsJobs);
 
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

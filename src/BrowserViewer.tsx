@@ -9,7 +9,7 @@ interface Message {
 }
 
 function BrowserViewer() {
-  const [url, setUrl] = useState('https://www.ycombinator.com/jobs')
+  const [url, setUrl] = useState('https://news.ycombinator.com/jobs')
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
