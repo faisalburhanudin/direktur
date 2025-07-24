@@ -1,19 +1,34 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import { 
   launchBrowser, 
   navigateToPage, 
   closePage, 
   restartBrowser, 
   closeBrowser, 
-  getBrowserStatus 
+  getBrowserStatus,
+  startScreenshotStream,
+  stopScreenshotStream,
+  getScreenshotStreamStatus
 } from './src/services/automation-api.js';
+import ScreenshotWebSocketServer from './src/services/websocket-server.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3001;
+const server = createServer(app);
+
+// Initialize WebSocket server
+const wsServer = new ScreenshotWebSocketServer({
+  server,
+  path: '/screenshots'
+});
+
+// Start WebSocket server
+wsServer.start().catch(console.error);
 
 app.use(cors());
 app.use(express.json());
@@ -65,6 +80,12 @@ app.post('/api/browser/restart', restartBrowser);
 app.post('/api/browser/close', closeBrowser);
 app.get('/api/browser/status', getBrowserStatus);
 
-app.listen(PORT, () => {
+// Screenshot streaming endpoints
+app.post('/api/screenshots/start', (req, res) => startScreenshotStream(req, res, wsServer));
+app.post('/api/screenshots/stop', stopScreenshotStream);
+app.get('/api/screenshots/status', getScreenshotStreamStatus);
+
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`WebSocket server available at ws://localhost:${PORT}/screenshots`);
 });

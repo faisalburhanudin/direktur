@@ -1,9 +1,12 @@
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
 import BrowserManager from '../automation/browser-manager.js';
+import ScreenshotCapture from '../automation/screenshot-capture.js';
+import ScreenshotWebSocketServer from './websocket-server.js';
 
 const browserManager = new BrowserManager();
+const screenshotCaptures = new Map<string, ScreenshotCapture>();
 
-export const launchBrowser = async (req: Request, res: Response) => {
+export const launchBrowser = async (_req: Request, res: Response) => {
     try {
         await browserManager.launch();
         res.json({ 
@@ -69,7 +72,7 @@ export const closePage = async (req: Request, res: Response) => {
     }
 };
 
-export const restartBrowser = async (req: Request, res: Response) => {
+export const restartBrowser = async (_req: Request, res: Response) => {
     try {
         await browserManager.restart();
         
@@ -87,7 +90,7 @@ export const restartBrowser = async (req: Request, res: Response) => {
     }
 };
 
-export const closeBrowser = async (req: Request, res: Response) => {
+export const closeBrowser = async (_req: Request, res: Response) => {
     try {
         await browserManager.close();
         
@@ -105,7 +108,7 @@ export const closeBrowser = async (req: Request, res: Response) => {
     }
 };
 
-export const getBrowserStatus = async (req: Request, res: Response) => {
+export const getBrowserStatus = async (_req: Request, res: Response) => {
     try {
         res.json({ 
             success: true, 
@@ -115,6 +118,99 @@ export const getBrowserStatus = async (req: Request, res: Response) => {
         res.status(500).json({ 
             success: false, 
             error: 'Failed to get browser status',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const startScreenshotStream = async (req: Request, res: Response, wsServer: ScreenshotWebSocketServer) => {
+    try {
+        const { pageId = 'default', options = {} } = req.body;
+        
+        // Get the page from browser manager
+        const page = await browserManager.getPage(pageId);
+        if (!page) {
+            return res.status(404).json({
+                success: false,
+                error: `Page ${pageId} not found. Please navigate to a page first.`
+            });
+        }
+
+        // Create screenshot capture instance
+        const screenshotCapture = new ScreenshotCapture(options);
+        await screenshotCapture.initialize(page);
+
+        // Set up event listener to broadcast screenshots
+        screenshotCapture.on('screenshot', (data) => {
+            wsServer.broadcastScreenshot(data.data, data.trigger, pageId);
+        });
+
+        // Store the capture instance
+        screenshotCaptures.set(pageId, screenshotCapture);
+
+        // Notify WebSocket clients
+        wsServer.broadcastStatus(`Screenshot streaming started for page ${pageId}`, pageId);
+
+        res.json({
+            success: true,
+            message: `Screenshot streaming started for page ${pageId}`,
+            pageId,
+            connectedClients: wsServer.getConnectedClientsCount()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start screenshot streaming',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const stopScreenshotStream = async (req: Request, res: Response) => {
+    try {
+        const { pageId = 'default' } = req.body;
+        
+        const screenshotCapture = screenshotCaptures.get(pageId);
+        if (!screenshotCapture) {
+            return res.status(404).json({
+                success: false,
+                error: `No screenshot stream found for page ${pageId}`
+            });
+        }
+
+        await screenshotCapture.destroy();
+        screenshotCaptures.delete(pageId);
+
+        res.json({
+            success: true,
+            message: `Screenshot streaming stopped for page ${pageId}`,
+            pageId
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop screenshot streaming',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const getScreenshotStreamStatus = async (_req: Request, res: Response) => {
+    try {
+        const activeStreams = Array.from(screenshotCaptures.entries()).map(([pageId, capture]) => ({
+            pageId,
+            isActive: capture.isInitialized()
+        }));
+
+        res.json({
+            success: true,
+            activeStreams,
+            totalStreams: activeStreams.length
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get screenshot stream status',
             details: error instanceof Error ? error.message : String(error)
         });
     }
