@@ -1,4 +1,5 @@
 import { useState, useCallback, useImperativeHandle, forwardRef } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useJobAutomation } from '../services/useJobAutomation'
 
 interface Message {
@@ -105,7 +106,25 @@ const ChatBar = forwardRef<ChatBarRef, ChatBarProps>(({ url }, ref) => {
                   : 'bg-gray-100 text-gray-700 mr-auto max-w-[80%]'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              {message.isUser ? (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              ) : (
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({children}) => <h1 className="text-lg font-bold mb-2 text-gray-700">{children}</h1>,
+                      h2: ({children}) => <h2 className="text-base font-semibold mb-2 text-gray-700">{children}</h2>,
+                      p: ({children}) => <p className="text-sm mb-2 text-gray-700">{children}</p>,
+                      code: ({children}) => <code className="text-xs bg-gray-200 px-1 rounded">{children}</code>,
+                      ol: ({children}) => <ol className="text-sm mb-2 ml-4 list-decimal text-gray-700">{children}</ol>,
+                      ul: ({children}) => <ul className="text-sm mb-2 ml-4 list-disc text-gray-700">{children}</ul>,
+                      li: ({children}) => <li className="mb-1 text-gray-700">{children}</li>
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              )}
             </div>
           ))}
           {isLoading && (
