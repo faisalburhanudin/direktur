@@ -29,10 +29,3 @@ jobs:
       run: npm test
       env:
         CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
-      
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
