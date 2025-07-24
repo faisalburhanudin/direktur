@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "tsx server.ts"
+    "server": "tsx server.ts",
+    "test": "patchright test",
+    "test:headed": "patchright test --headed"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
