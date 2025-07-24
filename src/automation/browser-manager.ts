@@ -1,4 +1,4 @@
-import { chromium, Browser, Page } from 'patchright';
+import { chromium, type Browser, type Page } from 'patchright';
 
 class BrowserManager {
     private browser: Browser | null = null;

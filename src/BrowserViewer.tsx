@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import LiveBrowserView from './components/LiveBrowserView'
 
 interface Message {
   id: string
@@ -12,7 +13,7 @@ function BrowserViewer() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello',
+      content: 'Hello! I can now see the live browser view. Navigate to any website and I\'ll be able to analyze what you\'re looking at in real-time.',
       isUser: false,
       timestamp: new Date()
     }
@@ -56,7 +57,7 @@ function BrowserViewer() {
       }
 
       setMessages(prev => [...prev, aiMessage])
-    } catch (error) {
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: 'Sorry, I encountered an error connecting to the chat service.',
@@ -78,32 +79,8 @@ function BrowserViewer() {
 
   return (
     <div className="h-screen flex">
-      {/* Browser View */}
-      <div className="flex-1 flex flex-col">
-        {/* Browser Controls */}
-        <div className="bg-gray-100 border-b border-gray-300 p-2 flex items-center space-x-2">
-          <button className="w-3 h-3 bg-red-500 rounded-full"></button>
-          <button className="w-3 h-3 bg-yellow-500 rounded-full"></button>
-          <button className="w-3 h-3 bg-green-500 rounded-full"></button>
-          <div className="flex-1 mx-4">
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-3 py-1 bg-white border border-gray-300 rounded text-sm"
-            />
-          </div>
-        </div>
-        
-        {/* Website Content */}
-        <div className="flex-1">
-          <iframe
-            src={url}
-            className="w-full h-full border-0"
-            title="Browser View"
-          />
-        </div>
-      </div>
+      {/* Live Browser View */}
+      <LiveBrowserView url={url} onUrlChange={setUrl} />
       
       {/* Chat Sidebar */}
       <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
