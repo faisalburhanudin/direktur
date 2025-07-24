@@ -196,14 +196,14 @@ export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewPro
   useEffect(() => {
     initializeBrowser();
     return cleanup;
-  }, [initializeBrowser, cleanup]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Handle URL changes
   useEffect(() => {
     if (url && isConnected) {
       navigateToUrl(url);
     }
-  }, [url, isConnected, navigateToUrl]);
+  }, [url, isConnected]); // Remove navigateToUrl from deps to prevent loop
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();

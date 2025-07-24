@@ -40,7 +40,7 @@ export class ScreenshotWebSocketServer extends EventEmitter {
             port: options.port ?? 8080,
             server: options.server,
             path: options.path ?? '/screenshots',
-            maxClients: options.maxClients ?? 10,
+            maxClients: options.maxClients ?? 50,
             heartbeatInterval: options.heartbeatInterval ?? 30000,
         };
     }
