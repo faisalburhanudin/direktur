@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import BrowserViewer from './BrowserViewer'
 
 const StarterPrompt = ({ icon, title, description, onClick }: { icon: string, title: string, description: string, onClick?: () => void }) => (
@@ -11,9 +12,9 @@ const StarterPrompt = ({ icon, title, description, onClick }: { icon: string, ti
   </div>
 )
 
-function App() {
+const HomePage = () => {
   const [query, setQuery] = useState('')
-  const [currentView, setCurrentView] = useState('home')
+  const navigate = useNavigate()
 
   const starterPrompts = [
     {
@@ -32,7 +33,7 @@ function App() {
       icon: "💼",
       title: "Retrieve jobs from HackerNews",
       description: "Go to the HackerNews jobs page and get me the current job listings",
-      action: () => setCurrentView('browser')
+      action: () => navigate('/browser')
     },
     {
       icon: "🛍️",
@@ -53,10 +54,6 @@ function App() {
       action: () => {}
     }
   ]
-
-  if (currentView === 'browser') {
-    return <BrowserViewer />
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,6 +113,15 @@ function App() {
         </div>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/browser" element={<BrowserViewer />} />
+    </Routes>
   )
 }
 

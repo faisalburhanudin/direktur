@@ -63,7 +63,15 @@ class BrowserManager {
             }
         }
 
-        await page.goto(url);
+        try {
+            await page.goto(url, { waitUntil: 'load', timeout: 30000 });
+        } catch (error: any) {
+            if (error.message?.includes('ERR_ABORTED') || error.message?.includes('net::ERR_ABORTED')) {
+                console.warn(`Navigation to ${url} was aborted, but continuing with page`);
+            } else {
+                throw error;
+            }
+        }
         return page;
     }
 

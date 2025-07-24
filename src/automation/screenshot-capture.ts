@@ -195,7 +195,12 @@ export class ScreenshotCapture extends EventEmitter {
                 const trigger = hasActivity ? 'activity' : 'periodic';
                 await this.captureScreenshot(trigger);
             } catch (error) {
-                console.warn('Periodic screenshot capture failed:', error);
+                if (error.message?.includes('Execution context was destroyed') || 
+                    error.message?.includes('because of a navigation')) {
+                    console.warn('Screenshot capture skipped due to navigation');
+                } else {
+                    console.warn('Periodic screenshot capture failed:', error);
+                }
             }
         }, this.options.periodicInterval);
     }
@@ -237,7 +242,12 @@ export class ScreenshotCapture extends EventEmitter {
                     }
                 });
             } catch (error) {
-                console.warn('Error cleaning up MutationObserver:', error);
+                if (error.message?.includes('Execution context was destroyed') || 
+                    error.message?.includes('because of a navigation')) {
+                    console.warn('MutationObserver cleanup skipped due to navigation');
+                } else {
+                    console.warn('Error cleaning up MutationObserver:', error);
+                }
             }
         }
 
