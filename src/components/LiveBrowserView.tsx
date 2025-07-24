@@ -3,18 +3,22 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 interface LiveBrowserViewProps {
   url: string;
   onUrlChange: (url: string) => void;
+  onBrowserReady?: () => void;
 }
 
-export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewProps) {
+export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: LiveBrowserViewProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [clickFeedback, setClickFeedback] = useState<{x: number, y: number} | null>(null);
+  const [browserReady, setBrowserReady] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const imageScaleRef = useRef<{scale: number, offsetX: number, offsetY: number, imageWidth: number, imageHeight: number} | null>(null);
+  const onBrowserReadyCalledRef = useRef(false);
 
   const drawImageToCanvas = useCallback((img: HTMLImageElement) => {
     const canvas = canvasRef.current;
@@ -80,6 +84,9 @@ export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewPro
     if (isStreaming) {
       stopScreenshotStream();
     }
+    setBrowserReady(false);
+    setIsInitializing(false);
+    onBrowserReadyCalledRef.current = false;
   }, [isStreaming, stopScreenshotStream]);
 
   const connectWebSocket = useCallback(() => {
@@ -157,8 +164,13 @@ export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewPro
   }, []);
 
   const initializeBrowser = useCallback(async () => {
+    if (isConnected || isInitializing) return;
+    
+    setIsInitializing(true);
+    setConnectionStatus('Initializing...');
+    
     try {
-      // Launch browser
+      console.log('Calling browser launch API...');
       const launchResponse = await fetch('http://localhost:3001/api/browser/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -168,15 +180,20 @@ export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewPro
         throw new Error('Failed to launch browser');
       }
 
-      // Initialize WebSocket connection
+      const data = await launchResponse.json();
+      console.log('Browser launch response:', data);
+
       connectWebSocket();
       setIsConnected(true);
+      setBrowserReady(true);
       setConnectionStatus('Connected');
     } catch (error) {
       console.error('Failed to initialize browser:', error);
       setConnectionStatus('Failed to connect');
+    } finally {
+      setIsInitializing(false);
     }
-  }, [connectWebSocket]);
+  }, [connectWebSocket, isConnected, isInitializing]);
 
   const navigateToUrl = useCallback(async (targetUrl: string) => {
     try {
@@ -208,6 +225,14 @@ export default function LiveBrowserView({ url, onUrlChange }: LiveBrowserViewPro
     initializeBrowser();
     return cleanup;
   }, []); // Empty dependency array - only run once on mount
+
+  // Call onBrowserReady when browser is ready (only once)
+  useEffect(() => {
+    if (browserReady && onBrowserReady && !onBrowserReadyCalledRef.current) {
+      onBrowserReadyCalledRef.current = true;
+      onBrowserReady();
+    }
+  }, [browserReady, onBrowserReady]);
 
   // Handle URL changes
   useEffect(() => {

@@ -19,6 +19,13 @@ import ScreenshotWebSocketServer from './src/services/websocket-server.js';
 
 dotenv.config();
 
+// Check for required environment variables
+if (!process.env.CLAUDE_API_KEY) {
+  console.error('❌ Error: CLAUDE_API_KEY environment variable is required');
+  console.error('Please set your Claude API key in a .env file or environment variable');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = 3001;
 const server = createServer(app);
@@ -37,7 +44,7 @@ app.use(express.json());
 
 app.post('/api/chat', async (req: Request, res: Response) => {
   try {
-    const { message, url } = req.body;
+    const { message, url, automationData } = req.body;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -47,11 +54,13 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [{
           role: 'user',
-          content: `You are helping analyze a webpage at ${url}. The user asks: ${message}`
+          content: automationData 
+            ? `You are analyzing HackerNews job data. Here are the jobs I found:\n\n${JSON.stringify(automationData, null, 2)}\n\nUser request: ${message}`
+            : `You are helping analyze a webpage at ${url}. The user asks: ${message}`
         }]
       })
     });
@@ -59,7 +68,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error?.message || 'API request failed');
+      console.error('Claude API error response:', data);
+      throw new Error(data.error?.message || `API request failed with status ${response.status}`);
     }
 
     res.json({ 

@@ -263,11 +263,24 @@ export const scrapeHackerNewsJobs = async (req: Request, res: Response) => {
     try {
         const { pageId = 'default' } = req.body;
         
-        // Navigate to HackerNews jobs page
+        // Ensure browser is launched first
+        if (!browserManager.isRunning()) {
+            console.log('Browser not running, launching...');
+            await browserManager.launch();
+        }
+        
+        console.log('Navigating to HackerNews jobs page...');
+        // Navigate to HackerNews jobs page with longer timeout
         const page = await browserManager.navigateTo('https://news.ycombinator.com/jobs', pageId);
         
-        // Wait for page to load
-        await page.waitForTimeout(2000);
+        // Wait for page to load and check if navigation was successful
+        console.log('Waiting for page to load...');
+        try {
+            await page.waitForLoadState('load', { timeout: 10000 });
+            await page.waitForSelector('tr.athing', { timeout: 5000 });
+        } catch (waitError) {
+            console.log('Page load timeout, but continuing...');
+        }
         
         // Simple scraping - get all job links
         const jobs = await page.evaluate(() => {
@@ -293,6 +306,8 @@ export const scrapeHackerNewsJobs = async (req: Request, res: Response) => {
             return jobData;
         });
         
+        console.log(`Successfully scraped ${jobs.length} jobs`);
+        
         res.json({
             success: true,
             message: `Scraped ${jobs.length} jobs from HackerNews`,
@@ -301,6 +316,7 @@ export const scrapeHackerNewsJobs = async (req: Request, res: Response) => {
             url: page.url()
         });
     } catch (error) {
+        console.error('Scraping error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to scrape HackerNews jobs',

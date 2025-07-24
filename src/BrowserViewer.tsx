@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import LiveBrowserView from './components/LiveBrowserView'
 
 interface Message {
@@ -10,16 +10,73 @@ interface Message {
 
 function BrowserViewer() {
   const [url, setUrl] = useState('https://news.ycombinator.com/jobs')
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: 'Hello! I can now see the live browser view. Navigate to any website and I\'ll be able to analyze what you\'re looking at in real-time.',
-      isUser: false,
-      timestamp: new Date()
-    }
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [hasTriggeredAutomation, setHasTriggeredAutomation] = useState(false)
+
+  const triggerJobsAutomation = useCallback(async () => {
+    if (hasTriggeredAutomation) return
+    
+    setHasTriggeredAutomation(true)
+    setIsLoading(true)
+    try {
+      // Scrape HackerNews jobs directly - browser should already be initialized by LiveBrowserView
+      const response = await fetch('http://localhost:3001/api/hackernews/scrape-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        // Send jobs data to Claude for initial analysis
+        const chatResponse = await fetch('http://localhost:3001/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: 'Analyze these HackerNews job listings',
+            url: url,
+            automationData: data.jobs
+          })
+        })
+
+        const chatData = await chatResponse.json()
+        
+        const initialMessage: Message = {
+          id: '1',
+          content: chatData.response || `Found ${data.jobs.length} jobs from HackerNews. Here's what I found...`,
+          isUser: false,
+          timestamp: new Date()
+        }
+
+        setMessages([initialMessage])
+      } else {
+        const errorMessage: Message = {
+          id: '1',
+          content: 'I had trouble getting the job listings. Let me know if you\'d like me to try again.',
+          isUser: false,
+          timestamp: new Date()
+        }
+        setMessages([errorMessage])
+      }
+    } catch (error) {
+      const errorMessage: Message = {
+        id: '1',
+        content: 'I encountered an error while fetching jobs. The automation service might not be ready.',
+        isUser: false,
+        timestamp: new Date()
+      }
+      setMessages([errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [hasTriggeredAutomation, url])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
@@ -43,7 +100,8 @@ function BrowserViewer() {
         },
         body: JSON.stringify({
           message: inputValue.trim(),
-          url: url
+          url: url,
+          automationData: null
         }),
       })
 
@@ -80,7 +138,7 @@ function BrowserViewer() {
   return (
     <div className="h-screen flex">
       {/* Live Browser View */}
-      <LiveBrowserView url={url} onUrlChange={setUrl} />
+      <LiveBrowserView url={url} onUrlChange={setUrl} onBrowserReady={triggerJobsAutomation} />
       
       {/* Chat Sidebar */}
       <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
