@@ -3,6 +3,10 @@ import { chromium, type Browser, type Page } from 'patchright';
 class BrowserManager {
     private browser: Browser | null = null;
     private pages: Map<string, Page> = new Map();
+    
+    // Standard viewport dimensions for consistent screenshots
+    private readonly VIEWPORT_WIDTH = 1920;
+    private readonly VIEWPORT_HEIGHT = 1080;
 
     async launch(): Promise<Browser> {
         if (this.browser) {
@@ -16,7 +20,11 @@ class BrowserManager {
                 '--disable-blink-features=AutomationControlled',
                 '--disable-dev-shm-usage',
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                `--window-size=${this.VIEWPORT_WIDTH},${this.VIEWPORT_HEIGHT}`,
+                '--force-device-scale-factor=1',
+                '--disable-extensions',
+                '--disable-plugins'
             ]
         });
 
@@ -29,6 +37,10 @@ class BrowserManager {
         }
 
         const page = await this.browser!.newPage();
+        
+        // Set viewport to consistent dimensions
+        await page.setViewportSize({ width: this.VIEWPORT_WIDTH, height: this.VIEWPORT_HEIGHT });
+        
         this.pages.set(pageId, page);
         
         return page;
@@ -43,6 +55,12 @@ class BrowserManager {
         
         if (!page) {
             page = await this.createPage(pageId);
+        } else {
+            // Ensure existing page has correct viewport
+            const currentViewport = page.viewportSize();
+            if (!currentViewport || currentViewport.width !== this.VIEWPORT_WIDTH || currentViewport.height !== this.VIEWPORT_HEIGHT) {
+                await page.setViewportSize({ width: this.VIEWPORT_WIDTH, height: this.VIEWPORT_HEIGHT });
+            }
         }
 
         await page.goto(url);

@@ -215,3 +215,46 @@ export const getScreenshotStreamStatus = async (_req: Request, res: Response) =>
         });
     }
 };
+
+export const clickAtCoordinate = async (req: Request, res: Response) => {
+    try {
+        const { x, y, pageId = 'default' } = req.body;
+        
+        if (typeof x !== 'number' || typeof y !== 'number') {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'x and y coordinates are required and must be numbers' 
+            });
+        }
+
+        const page = await browserManager.getPage(pageId);
+        if (!page) {
+            return res.status(404).json({
+                success: false,
+                error: `Page ${pageId} not found. Please navigate to a page first.`
+            });
+        }
+
+        // Get viewport size for debugging
+        const viewport = page.viewportSize();
+        console.log('Browser viewport:', viewport);
+        console.log(`Clicking at coordinates: (${x}, ${y})`);
+        
+        await page.mouse.click(x, y);
+        
+        res.json({ 
+            success: true, 
+            message: `Clicked at coordinates (${x}, ${y}) on page ${pageId}`,
+            x,
+            y,
+            pageId,
+            viewport
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to click at coordinates',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};

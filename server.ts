@@ -11,7 +11,8 @@ import {
   getBrowserStatus,
   startScreenshotStream,
   stopScreenshotStream,
-  getScreenshotStreamStatus
+  getScreenshotStreamStatus,
+  clickAtCoordinate
 } from './src/services/automation-api.js';
 import ScreenshotWebSocketServer from './src/services/websocket-server.js';
 
@@ -75,6 +76,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 // Browser automation endpoints
 app.post('/api/browser/launch', launchBrowser);
 app.post('/api/browser/navigate', navigateToPage);
+app.post('/api/browser/click', clickAtCoordinate);
 app.post('/api/browser/close-page', closePage);
 app.post('/api/browser/restart', restartBrowser);
 app.post('/api/browser/close', closeBrowser);
