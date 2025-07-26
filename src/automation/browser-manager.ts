@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from 'patchright';
+import { BROWSER_HEADLESS } from '../config';
 
 class BrowserManager {
     private browser: Browser | null = null;
@@ -14,7 +15,7 @@ class BrowserManager {
         }
 
         this.browser = await chromium.launch({
-            headless: false,
+            headless: BROWSER_HEADLESS,
             args: [
                 '--disable-web-security',
                 '--disable-blink-features=AutomationControlled',
