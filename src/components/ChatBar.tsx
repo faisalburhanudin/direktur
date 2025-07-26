@@ -1,6 +1,7 @@
-import { useState, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useState, useImperativeHandle, forwardRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useJobAutomation } from '../services/useJobAutomation'
+import { SERVER_URL } from '../config'
 
 interface Message {
   id: string
@@ -48,7 +49,7 @@ const ChatBar = forwardRef<ChatBarRef, ChatBarProps>(({ url }, ref) => {
     setIsChatLoading(true)
 
     try {
-      const response = await fetch('http://localhost:3001/api/chat', {
+      const response = await fetch(`${SERVER_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

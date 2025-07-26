@@ -1,0 +1,39 @@
+FROM node:lts-bullseye
+
+# Install Playwright dependencies
+RUN apt-get update && apt-get install -y \
+    chromium \
+    libnss3 \
+    libfreetype6 \
+    libfreetype6-dev \
+    libharfbuzz0b \
+    ca-certificates \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Playwright to use system Chromium
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Install patchwright dependencies
+RUN npx patchright install
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Expose server port
+EXPOSE 3001
+
+# Start server
+CMD ["npm", "run", "server"]

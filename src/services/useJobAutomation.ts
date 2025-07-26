@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { SERVER_URL } from '../config'
 
 interface Message {
   id: string
@@ -32,7 +33,7 @@ export const useJobAutomation = ({
     setIsLoading(true)
     
     try {
-      const response = await fetch('http://localhost:3001/api/hackernews/scrape-jobs', {
+      const response = await fetch(`${SERVER_URL}/api/hackernews/scrape-jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +44,7 @@ export const useJobAutomation = ({
       const data = await response.json()
       
       if (data.success) {
-        const chatResponse = await fetch('http://localhost:3001/api/chat', {
+        const chatResponse = await fetch(`${SERVER_URL}/api/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

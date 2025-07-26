@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { SERVER_URL } from '../config';
 
 interface LiveBrowserViewProps {
   url: string;
@@ -61,7 +62,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
 
   const stopScreenshotStream = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/screenshots/stop', {
+      const response = await fetch(`${SERVER_URL}/api/screenshots/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageId: 'default' })
@@ -90,7 +91,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
   }, [isStreaming, stopScreenshotStream]);
 
   const connectWebSocket = useCallback(() => {
-    const ws = new WebSocket('ws://localhost:3001/screenshots');
+    const ws = new WebSocket(`${SERVER_URL.replace('http', 'ws')}/screenshots`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -136,7 +137,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
 
   const startScreenshotStream = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/screenshots/start', {
+      const response = await fetch(`${SERVER_URL}/api/screenshots/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -171,7 +172,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
     
     try {
       console.log('Calling browser launch API...');
-      const launchResponse = await fetch('http://localhost:3001/api/browser/launch', {
+      const launchResponse = await fetch(`${SERVER_URL}/api/browser/launch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -197,7 +198,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
 
   const navigateToUrl = useCallback(async (targetUrl: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/browser/navigate', {
+      const response = await fetch(`${SERVER_URL}/api/browser/navigate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: targetUrl, pageId: 'default' })
@@ -280,7 +281,7 @@ export default function LiveBrowserView({ url, onUrlChange, onBrowserReady }: Li
     setTimeout(() => setClickFeedback(null), 300);
 
     try {
-      const response = await fetch('http://localhost:3001/api/browser/click', {
+      const response = await fetch(`${SERVER_URL}/api/browser/click`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
